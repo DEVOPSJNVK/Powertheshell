@@ -18,7 +18,10 @@ Param(
     [String]$masterReport = "Change_Implementation_and_Verification_Task_Violation*",
 
     [parameter(Mandatory=$false)]
-    [String]$masterSheet = "Report 1"
+    [String]$masterSheet = "Report 1",
+    
+    [parameter(Mandatory=$false)]
+    [String]$emailRecipients = "Samynathan, Ragupathi <ragupathi.samynathan@hpe.com>;Murthy, Manoj Suresh <manoj-suresh.murthy@hpe.com>;Vardhan N, Harsha <harsha.vardhan-n@hpe.com>"
 )
 
 #$taskType
@@ -624,3 +627,44 @@ $objPPT.Quit()
 [void][System.Runtime.Interopservices.Marshal]::ReleaseComObject($dormwb)
 [void][System.Runtime.Interopservices.Marshal]::ReleaseComObject($dormws)
 [void][System.Runtime.Interopservices.Marshal]::ReleaseComObject($dormCellRange)
+
+###################  SCRIPT 5 (SEND EMAIL)  ########################
+
+$Outlook = New-Object -ComObject Outlook.Application;
+$Mail = $Outlook.CreateItem(0);
+$mail.To = "Samynathan, Ragupathi <ragupathi.samynathan@hpe.com>;Murthy, Manoj Suresh <manoj-suresh.murthy@hpe.com>;Vardhan N, Harsha <harsha.vardhan-n@hpe.com>";
+
+$date = Get-Date -Format "dd MMM yyyy"
+
+$Mail.Subject = "Daily Report - $date"
+
+$filesToAttach = (Get-ChildItem -Path "C:\BIONIX\Generated Reports" | `
+            Where-Object -FilterScript {$_.Name -like "*$date*"} | `
+            Where-Object -FilterScript {($_.Name -like "*DORM Hypercare -*") -or ($_.Name -like "*Implementation Task Violation -*") `
+            -or ($_.Name -like "Verification Task Violation -*")}).FullName
+
+foreach($file in $filesToAttach){
+
+$Mail.Attachments.Add($file)
+
+}
+
+$Mail.HTMLBody = @"
+<!DOCTYPE html>
+<html>
+<p>Hi All,</p>
+<p>Please find the attached daily Change Violation report along with pending DXC Group Approvals for <b>$date</b></p>
+<p>Below is the link for raw data file for Pending Group Approvals.</p>
+
+<h3><p><a href="https://hpe.sharepoint.com/teams/DBK/LiveServices/07ServiceMgmt/Forms/AllItems.aspx?RootFolder=%2Fteams
+%2FDBK%2FLiveServices%2F07ServiceMgmt%2F04%20Change%20Management%2FPending%20Approvals&FolderCTID=0x012000C782A4
+88B11A234EA5709BDE95699FC6&View=%7B04247B17%2D1A57%2D49A1%2D9931%2D31B35F2C3BB0%7D#InplviewHash04247b17-1a57-49a
+1-9931-31b35f2c3bb0=Paged%3DTRUE-p_SortBehavior%3D0-p_FileLeafRef%3DPending%2520Approvals%2520%2528Violations%252
+9%252d18th%2520May%252exlsx-p_ID%3D11277-FolderCTID%3D0x012000C782A488B11A234EA5709BDE95699FC6-PageFirstRow%3D91-">
+Pending Approval's Sharepoint Link</a></p></h3>
+
+</html>
+"@
+
+
+$Mail.Send()
