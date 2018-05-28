@@ -62,7 +62,7 @@ else{
 
     Write-Host "Importing Powershell Module"
 
-    Import-Module -Name '.\Modules\ImportExcel\4.0.13\ImportExcel.psm1'
+    Import-Module -Name 'C:\BIONIX\Modules\ImportExcel\4.0.13\ImportExcel.psm1'
 
 
 
@@ -521,3 +521,106 @@ $xl1.Quit()
 [void][System.Runtime.Interopservices.Marshal]::ReleaseComObject($objPresentatio)
 [void][System.Runtime.Interopservices.Marshal]::ReleaseComObject($slide)
 [void][System.Runtime.Interopservices.Marshal]::ReleaseComObject($pic)
+
+
+##################################### SCRIPT 4 ##########################################
+
+$date = Get-Date -Format "dd MMM yyyy"
+$reportPath = ("C:\BIONIX\Generated Reports"+"\"+"Implementation Task Violation - "+$date+".xlsx")
+
+$dormPath = (Get-ChildItem -Path "C:\BIONIX\DB Reports" | Where-Object -FilterScript {$_.Name -like "DORM Master Sheet*"}).FullName
+$destDormPath = ("C:\BIONIX\Generated Reports\DORM Master Sheet - "+$date+".xlsx")
+
+Copy-Item -Path $dormPath -Destination $destDormPath -Force
+
+$xlShiftToRight = -4161
+
+$dormxl=New-Object -ComObject Excel.Application
+$dormxl.Visible = $true
+$dormwb=$dormxl.workbooks.open($destDormPath)
+$dormws = $dormwb.worksheets.Item('Status-2018')
+
+$dormCellRange = $dormws.Range('F1').EntireColumn
+
+#$dormCellRange = $dormxl.Range('F1').EntireColumn
+[void] $dormCellRange.Insert($xlShiftToRight)
+
+$dormDate = Get-Date -Format "dd MMM"
+$dormDataCell = $dormws.Cells.Item(2,6)
+
+$dormDataCell.Value() = $dormDate
+$dormDataCell.NumberFormat = "dd MMM"
+
+$implData = Import-Excel $reportPath
+
+$dormUsedRange = $dormws.UsedRange.Address($False,$False)
+
+$rowLabels = $implData.('Row Labels')
+
+foreach($rowLable in $rowLabels){
+
+            $rowLable
+
+            if($rowLable -notlike "*Total*"){
+            $getNme = $dormws.Range($dormUsedRange).find($rowLable)
+            $cellAddress = $getNme.Address($False,$False)
+            $cellAddress = $cellAddress.Replace('A',$null)
+            $dormws.Cells.Item($cellAddress,6).value() = ( $implData | Where-Object -FilterScript {$_.'Row Labels' -eq $rowLable} ).'Count of Task Reference Number'
+            }
+       
+            if($rowLable -like "*Total*"){
+            $getNme = $dormws.Range($dormUsedRange).find($rowLable)
+            $cellAddress = $getNme.Address($False,$False)
+            $cellAddress = $cellAddress.Replace('A',$null)
+            $dormws.Cells.Item(70,6).value() = ( $implData | Where-Object -FilterScript {$_.'Row Labels' -eq $rowLable} ).'Count of Task Reference Number'
+            }
+
+}
+            
+$dormwb.Save()
+
+## Drawing line graph
+
+$dormChart = $dormws.Shapes.AddChart().Chart
+$dormChart.HasTitle = $true
+$dormChart.ChartTitle.Text = "DORM Table"
+$dormDataRange = $dormws.Range("F2:L2,F70:L70")
+$table = $dormChart.SetSourceData($dormDataRange)
+
+
+$xlChart=[Microsoft.Office.Interop.Excel.XLChartType]
+$dormChart.ChartType = $xlChart::xlLine
+
+$dormChart.CopyPicture()
+
+
+$objPPT = New-Object -ComObject "Powerpoint.Application"
+#$objPPT.Visible ='Msotrue'
+$objPresentatio = $objPPT.Presentations.Open($destPath)
+$slide = $objPresentatio.Slides.Item(1)
+
+$pic = $slide.Shapes.PasteSpecial()
+$pic.Height = 400
+$pic.Left = 100
+$pic.Top = 150
+
+
+
+$dormwb.Close($false)
+$dormxl.Quit()
+
+$objPresentatio.Save()
+$objPresentatio.Close()
+$objPPT.Quit()
+
+[void][System.Runtime.Interopservices.Marshal]::ReleaseComObject($objPPT)
+[void][System.Runtime.Interopservices.Marshal]::ReleaseComObject($objPresentatio)
+[void][System.Runtime.Interopservices.Marshal]::ReleaseComObject($pic)
+[void][System.Runtime.Interopservices.Marshal]::ReleaseComObject($slide)
+
+
+
+[void][System.Runtime.Interopservices.Marshal]::ReleaseComObject($dormxl)
+[void][System.Runtime.Interopservices.Marshal]::ReleaseComObject($dormwb)
+[void][System.Runtime.Interopservices.Marshal]::ReleaseComObject($dormws)
+[void][System.Runtime.Interopservices.Marshal]::ReleaseComObject($dormCellRange)
