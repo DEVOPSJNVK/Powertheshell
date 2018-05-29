@@ -1,4 +1,7 @@
-﻿function Task-Violation-excel {
+﻿$Mailto = "Samynathan, Ragupathi <ragupathi.samynathan@hpe.com>; Murthy, Manoj Suresh <manoj-suresh.murthy@hpe.com>; Vardhan N, Harsha <harsha.vardhan-n@hpe.com>"
+
+
+function Task-Violation-excel {
 
 #Declaring Parameters
 
@@ -18,10 +21,7 @@ Param(
     [String]$masterReport = "Change_Implementation_and_Verification_Task_Violation*",
 
     [parameter(Mandatory=$false)]
-    [String]$masterSheet = "Report 1",
-    
-    [parameter(Mandatory=$false)]
-    [String]$emailRecipients = "Samynathan, Ragupathi <ragupathi.samynathan@hpe.com>;Murthy, Manoj Suresh <manoj-suresh.murthy@hpe.com>;Vardhan N, Harsha <harsha.vardhan-n@hpe.com>"
+    [String]$masterSheet = "Report 1"
 )
 
 #$taskType
@@ -587,7 +587,7 @@ $dormwb.Save()
 $dormChart = $dormws.Shapes.AddChart().Chart
 $dormChart.HasTitle = $true
 $dormChart.ChartTitle.Text = "DORM Table"
-$dormDataRange = $dormws.Range("F2:L2,F70:L70")
+$dormDataRange = $dormws.Range("L2:F2,L70:F70")
 $table = $dormChart.SetSourceData($dormDataRange)
 
 
@@ -632,7 +632,7 @@ $objPPT.Quit()
 
 $Outlook = New-Object -ComObject Outlook.Application;
 $Mail = $Outlook.CreateItem(0);
-$mail.To = "Samynathan, Ragupathi <ragupathi.samynathan@hpe.com>;Murthy, Manoj Suresh <manoj-suresh.murthy@hpe.com>;Vardhan N, Harsha <harsha.vardhan-n@hpe.com>";
+$mail.To = $Mailto
 
 $date = Get-Date -Format "dd MMM yyyy"
 
@@ -649,6 +649,9 @@ $Mail.Attachments.Add($file)
 
 }
 
+$Namespace = $Outlook.GetNameSpace("MAPI")
+$User = $Namespace.CurrentUser.Name
+
 $Mail.HTMLBody = @"
 <!DOCTYPE html>
 <html>
@@ -656,15 +659,38 @@ $Mail.HTMLBody = @"
 <p>Please find the attached daily Change Violation report along with pending DXC Group Approvals for <b>$date</b></p>
 <p>Below is the link for raw data file for Pending Group Approvals.</p>
 
-<h3><p><a href="https://hpe.sharepoint.com/teams/DBK/LiveServices/07ServiceMgmt/Forms/AllItems.aspx?RootFolder=%2Fteams
-%2FDBK%2FLiveServices%2F07ServiceMgmt%2F04%20Change%20Management%2FPending%20Approvals&FolderCTID=0x012000C782A4
-88B11A234EA5709BDE95699FC6&View=%7B04247B17%2D1A57%2D49A1%2D9931%2D31B35F2C3BB0%7D#InplviewHash04247b17-1a57-49a
-1-9931-31b35f2c3bb0=Paged%3DTRUE-p_SortBehavior%3D0-p_FileLeafRef%3DPending%2520Approvals%2520%2528Violations%252
-9%252d18th%2520May%252exlsx-p_ID%3D11277-FolderCTID%3D0x012000C782A488B11A234EA5709BDE95699FC6-PageFirstRow%3D91-">
+<h3><p><a href="https://dxcportal.sharepoint.com/sites/DBK/LiveServices/07ServiceMgmt/
+Forms/AllItems.aspx?FolderCTID=0x01200041565DB2D76C8C4BB647FAF38342A839&View=%7BB9AB24
+67%2DD653%2D470D%2D8D13%2D30995B995A50%7D&id=%2Fsites%2FDBK%2FLiveServices%2F07Service
+Mgmt%2F04%20Change%20Management%2FPending%20Approvals">
 Pending Approval's Sharepoint Link</a></p></h3>
 
+<p class=MsoNormal><b><span lang=EN-US style='font-family:"Arial",sans-serif;
+color:black;mso-ansi-language:EN-US'>Regards,<o:p></o:p></span></b></p>
+
+<p class=MsoNormal><b><span lang=EN-US style='font-family:"Arial",sans-serif;
+color:black;mso-ansi-language:EN-US'>$User</span></b><span
+lang=EN-US style='font-family:"Arial",sans-serif;color:black;mso-ansi-language:
+EN-US'><br>
+Change Manager (Deutsche Bank Account)</span><span lang=EN-US style='font-size:
+10.0pt;font-family:"Arial",sans-serif;color:black;mso-ansi-language:EN-US'><br>
+<br>
+T +91 8033858272<br>
+<br>
+<b>DXC Technology</b><br>
+Pratik Tech Park, <br>
+Electronic City Phase 1, </span><span lang=EN-US style='font-size:10.0pt;
+mso-ansi-language:EN-US'><o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-US style='font-size:10.0pt;font-family:"Arial",sans-serif;
+color:black;mso-ansi-language:EN-US'>Bangalore, Karnataka, India - 560100<br>
+<br>
+<a href="http://www.dxc.technology/"><span style='color:black'>dxc.technology</span></a>
+</span><span lang=EN-US style='mso-ansi-language:EN-US'><o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-US style='mso-ansi-language:EN-US'><o:p>&nbsp;</o:p></span></p>
 </html>
 "@
 
-
+$Mail.Display()
 $Mail.Send()
