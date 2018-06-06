@@ -590,9 +590,13 @@ $dormChart.ChartTitle.Text = "DORM Table"
 $dormDataRange = $dormws.Range("L2:F2,L70:F70")
 $table = $dormChart.SetSourceData($dormDataRange)
 
+$dormChart.ShapeStyle = 5
 
 $xlChart=[Microsoft.Office.Interop.Excel.XLChartType]
 $dormChart.ChartType = $xlChart::xlLine
+
+$chartTemplate = "C:\BIONIX\Templates\Chart2.crtx"
+$dormChart.ApplyChartTemplate($chartTemplate)
 
 $dormChart.CopyPicture()
 
@@ -693,4 +697,4 @@ color:black;mso-ansi-language:EN-US'>Bangalore, Karnataka, India - 560100<br>
 "@
 
 $Mail.Display()
-$Mail.Send()
+#$Mail.Send()
